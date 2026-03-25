@@ -45,7 +45,13 @@
 <script nonce="aem" src="/scripts/scripts.js" type="module"></script>
 <script nonce="aem" src="/scripts/commerce.js" type="module"></script>
 
-<!-- Brand Concierge (Experience League 1.4.2): replace datastreamId and orgId before go-live -->
+<!--
+  Brand Concierge (Experience League 1.4.2). CSP nonces on the three library <script src>
+  tags below. brandconciergemain id=adobe-brand-concierge-client-alloy matches the default Alloy
+  instance so bootstrap skips injecting a second script. Inline stub + configure keep nonce="aem"
+  because this head CSP uses nonce-aem (inline scripts without nonce are blocked). Replace
+  datastreamId / orgId before go-live.
+-->
 <script nonce="aem" src="/scripts/styleconfigurations.js"></script>
 <script nonce="aem">
   !function (n, o) {
@@ -60,6 +66,7 @@
     (window, ['alloy']);
 </script>
 <script nonce="aem" src="/scripts/alloy.js"></script>
+<script nonce="aem" src="/scripts/brandconciergemain.js" id="adobe-brand-concierge-client-alloy"></script>
 <script nonce="aem">
   alloy('configure', {
     defaultConsent: 'in',
