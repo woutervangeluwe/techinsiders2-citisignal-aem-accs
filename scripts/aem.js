@@ -601,7 +601,20 @@ async function loadBlock(block) {
  */
 function decorateBlock(block) {
   const shortBlockName = block.classList[0];
-  if (shortBlockName && !block.dataset.blockStatus) {
+  if (!shortBlockName) return;
+  // AEM / Universal Editor may SSR blocks with data-block-status="loaded" before the client
+  // runs. The branch below would be skipped, so the block never gets class "block" and
+  // loadSection's div.block query misses it — Brand Concierge never hydrates.
+  if (block.dataset.blockStatus === 'loaded') {
+    if (!block.classList.contains('block')) {
+      block.classList.add('block');
+    }
+    if (!block.dataset.blockName) {
+      block.dataset.blockName = shortBlockName;
+    }
+    return;
+  }
+  if (!block.dataset.blockStatus) {
     block.classList.add('block');
     block.dataset.blockName = shortBlockName;
     block.dataset.blockStatus = 'initialized';
