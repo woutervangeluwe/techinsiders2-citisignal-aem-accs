@@ -550,34 +550,47 @@ function buildBlock(blockName, content) {
  * @param {Element} block The block element
  */
 async function loadBlock(block) {
+  const { blockName } = block.dataset;
   const status = block.dataset.blockStatus;
-  if (status !== 'loading' && status !== 'loaded') {
+  // Universal Editor / AEM can SSR blocks with data-block-status="loaded". That skips this
+  // function and never runs client decorate() — Brand Concierge then never dispatches
+  // aem-brand-concierge-mount. Re-run the block module once for brandconcierge only.
+  const ssrNeedsClientHydrate =
+    blockName === 'brandconcierge' &&
+    status === 'loaded' &&
+    block.dataset.bcClientHydrated !== 'true';
+  if ((status === 'loading' || status === 'loaded') && !ssrNeedsClientHydrate) {
+    return block;
+  }
+  if (!ssrNeedsClientHydrate) {
     block.dataset.blockStatus = 'loading';
-    const { blockName } = block.dataset;
-    try {
-      const cssLoaded = loadCSS(`${window.hlx.codeBasePath}/blocks/${blockName}/${blockName}.css`);
-      const decorationComplete = new Promise((resolve) => {
-        (async () => {
-          try {
-            const mod = await import(
-              `${window.hlx.codeBasePath}/blocks/${blockName}/${blockName}.js`
-            );
-            if (mod.default) {
-              await mod.default(block);
-            }
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.log(`failed to load module for ${blockName}`, error);
+  }
+  try {
+    const cssLoaded = loadCSS(`${window.hlx.codeBasePath}/blocks/${blockName}/${blockName}.css`);
+    const decorationComplete = new Promise((resolve) => {
+      (async () => {
+        try {
+          const mod = await import(
+            `${window.hlx.codeBasePath}/blocks/${blockName}/${blockName}.js`
+          );
+          if (mod.default) {
+            await mod.default(block);
           }
-          resolve();
-        })();
-      });
-      await Promise.all([cssLoaded, decorationComplete]);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.log(`failed to load block ${blockName}`, error);
-    }
-    block.dataset.blockStatus = 'loaded';
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.log(`failed to load module for ${blockName}`, error);
+        }
+        resolve();
+      })();
+    });
+    await Promise.all([cssLoaded, decorationComplete]);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.log(`failed to load block ${blockName}`, error);
+  }
+  block.dataset.blockStatus = 'loaded';
+  if (blockName === 'brandconcierge') {
+    block.dataset.bcClientHydrated = 'true';
   }
   return block;
 }
