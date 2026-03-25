@@ -50,7 +50,8 @@
   tags below. brandconciergemain id=adobe-brand-concierge-client-alloy matches the default Alloy
   instance so bootstrap skips injecting a second script. Inline stub + configure keep nonce="aem"
   because this head CSP uses nonce-aem (inline scripts without nonce are blocked). Alloy
-  datastreamId and orgId are set below for this deployment.
+  datastreamId and orgId are set below for this deployment. sendEvent/bootstrap run only after
+  the block dispatches aem-brand-concierge-mount (mount id is set in decorate(), not in head).
 -->
 <script nonce="aem" src="/scripts/styleconfigurations.js"></script>
 <script nonce="aem">
@@ -80,17 +81,22 @@
     prehidingStyle: '.personalization-container { opacity: 0 !important }',
   });
 
-  window.alloy('sendEvent', {
-    conversation: {
-      fetchConversationalExperience: true,
-    },
-  }).then((result) => {
-    console.log('Conversation experience fetched', result);
-    window.alloy('bootstrapConversationalExperience', {
-      selector: '#brand-concierge-mount',
-      src: '/scripts/brandconciergemain.js',
-      stylingConfigurations: window.styleConfiguration,
-      stickySession: true,
+  window.addEventListener('aem-brand-concierge-mount', function brandConciergeStart() {
+    window.removeEventListener('aem-brand-concierge-mount', brandConciergeStart);
+    window.alloy('sendEvent', {
+      conversation: {
+        fetchConversationalExperience: true,
+      },
+    }).then((result) => {
+      console.log('Conversation experience fetched', result);
+      window.alloy('bootstrapConversationalExperience', {
+        selector: '#brand-concierge-mount',
+        src: '/scripts/brandconciergemain.js',
+        stylingConfigurations: window.styleConfiguration,
+        stickySession: true,
+      });
+    }).catch((err) => {
+      console.error('[Brand Concierge] sendEvent failed', err);
     });
   });
 </script>
