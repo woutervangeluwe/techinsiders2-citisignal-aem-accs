@@ -49,10 +49,9 @@
   Brand Concierge (Experience League 1.4.2).
   CSP: script-src includes nonce-aem + strict-dynamic, so unsafe-inline does not apply to inline
   scripts — every inline block below must use nonce="aem" or the browser will not run it.
-  Timing: #brand-concierge-mount is set in blocks/brandconcierge/brandconcierge.js during
-  loadBlock(). We listen for aem-brand-concierge-mount and also poll with rAF so bootstrap runs
-  even if the event was missed (e.g. older block script) or deploy lag.
-  brandconciergemain uses id adobe-brand-concierge-client-alloy so Alloy skips injecting a duplicate.
+  sendEvent/bootstrap run from scripts/brand-concierge-alloy.js via decorate() (same document as
+  the block). brandconciergemain uses id adobe-brand-concierge-client-alloy so Alloy skips injecting
+  a duplicate script.
 -->
 <script nonce="aem" src="/scripts/styleconfigurations.js"></script>
 <script nonce="aem">
@@ -81,37 +80,6 @@
     thirdPartyCookiesEnabled: false,
     prehidingStyle: '.personalization-container { opacity: 0 !important }',
   });
-
-  (function brandConciergeAlloyBootstrap() {
-    var started = false;
-    function tryStart() {
-      if (started) return;
-      if (!document.getElementById('brand-concierge-mount')) return;
-      started = true;
-      window.alloy('sendEvent', {
-        conversation: {
-          fetchConversationalExperience: true,
-        },
-      }).then(function (result) {
-        console.log('Conversation experience fetched', result);
-        return window.alloy('bootstrapConversationalExperience', {
-          selector: '#brand-concierge-mount',
-          src: '/scripts/brandconciergemain.js',
-          stylingConfigurations: window.styleConfiguration,
-          stickySession: true,
-        });
-      }).catch(function (err) {
-        console.error('[Brand Concierge] sendEvent or bootstrap failed:', err);
-      });
-    }
-    window.addEventListener('aem-brand-concierge-mount', tryStart);
-    function poll(n) {
-      if (started || n > 1200) return;
-      tryStart();
-      if (!started) requestAnimationFrame(function () { poll(n + 1); });
-    }
-    poll(0);
-  })();
 </script>
 
 <link rel="modulepreload" href="/scripts/__dropins__/tools/lib/aem/configs.js" />
