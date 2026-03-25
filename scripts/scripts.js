@@ -17,7 +17,6 @@ import {
   initializeCommerce,
   applyTemplates,
   decorateLinks,
-  loadErrorPage,
 } from './commerce.js';
 
 /**
@@ -104,12 +103,17 @@ async function loadEager(doc) {
   if (main) {
     try {
       await initializeCommerce();
-      decorateMain(main);
-      applyTemplates(doc);
-      await loadCommerceEager();
     } catch (e) {
       console.error('Error initializing commerce configuration:', e);
-      loadErrorPage(418);
+    }
+    // Always decorate main so blocks (e.g. Brand Concierge) load even when commerce init
+    // fails (common on AEM Author preview: Failed to fetch to storefront GraphQL).
+    decorateMain(main);
+    applyTemplates(doc);
+    try {
+      await loadCommerceEager();
+    } catch (e) {
+      console.error('Error loading commerce eager:', e);
     }
     document.body.classList.add('appear');
     await loadSection(main.querySelector('.section'), waitForFirstImage);
