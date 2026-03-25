@@ -45,6 +45,49 @@
 <script nonce="aem" src="/scripts/scripts.js" type="module"></script>
 <script nonce="aem" src="/scripts/commerce.js" type="module"></script>
 
+<!-- Brand Concierge (Experience League 1.4.2): replace datastreamId and orgId before go-live -->
+<script nonce="aem" src="/scripts/styleconfigurations.js"></script>
+<script nonce="aem">
+  !function (n, o) {
+    o.forEach(function (o) {
+      n[o] || ((n.__alloyNS = n.__alloyNS ||
+        []).push(o), n[o] = function () {
+          var u = arguments; return new Promise(
+            function (i, l) { n[o].q.push([i, l, u]) })
+        }, n[o].q = [])
+    })
+  }
+    (window, ['alloy']);
+</script>
+<script nonce="aem" src="/scripts/alloy.js"></script>
+<script nonce="aem">
+  alloy('configure', {
+    defaultConsent: 'in',
+    edgeDomain: 'edge.adobedc.net',
+    edgeBasePath: 'ee',
+    datastreamId: 'XXXXX',
+    orgId: '--aepImsOrgId--',
+    debugEnabled: true,
+    idMigrationEnabled: false,
+    thirdPartyCookiesEnabled: false,
+    prehidingStyle: '.personalization-container { opacity: 0 !important }',
+  });
+
+  window.alloy('sendEvent', {
+    conversation: {
+      fetchConversationalExperience: true,
+    },
+  }).then((result) => {
+    console.log('Conversation experience fetched', result);
+    window.alloy('bootstrapConversationalExperience', {
+      selector: '#brand-concierge-mount',
+      src: '/scripts/brandconciergemain.js',
+      stylingConfigurations: window.styleConfiguration,
+      stickySession: true,
+    });
+  });
+</script>
+
 <link rel="modulepreload" href="/scripts/__dropins__/tools/lib/aem/configs.js" />
 <link rel="modulepreload" href="/scripts/initializers/index.js" />
 <link rel="modulepreload" href="/scripts/initializers/auth.js" />
